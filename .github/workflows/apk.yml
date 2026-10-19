@@ -43,12 +43,13 @@ jobs:
         with:
           packages: "platform-tools build-tools;37.0.0 platforms;android-36 ndk;28.0.13004108"
 
-      - name: 只读拉取 sing-box fork（仓库级 deploy key，只授权这一个仓，可随时吊销）
+      - name: 拉取 sing-box fork
+        # 该仓已公开，无需跨仓凭据（B 仓仍保持 private）。若日后改回 private，
+        # 用仓库级**只读** deploy key 存成 secret 并在下面加回 ssh-key。
         uses: actions/checkout@v4
         with:
           repository: AcccBa/easytier-sing-box
           ref: ${{ inputs.singbox_ref }}
-          ssh-key: ${{ secrets.SINGBOX_FORK_SSH_KEY }}
           path: singbox
 
       - name: 构建 libbox.aar 并放进 app/libs
