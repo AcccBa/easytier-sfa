@@ -13,6 +13,7 @@ Experimental Android client for sing-box, the universal proxy platform.
 > 签名证书 SHA-256：`b6f677491cc6e1ee0440afbc42568e9e114a6f963a2ee0a8780c7939e40e8012`（`CN=EasyTier Local Build`）。签名在 CI 的 environment `sign-gate` 内完成，**指纹不符即拒发**。
 >
 > 注：与上游的 GitHub fork 关系因可见性变更被剥离，同步上游走手工 `git fetch upstream && git merge upstream/dev`。
+> **已迁移**：本仓已停用并归档。唯一工作仓 = [AcccBa/singbox-easytier](https://github.com/AcccBa/singbox-easytier)（单仓含 `sing-box/` 与 `sfa/`，CI 出签名 APK）。此处内容仅作历史保留。
 
 ## Documentation
 
