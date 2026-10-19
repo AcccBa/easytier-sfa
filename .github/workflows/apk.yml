@@ -13,6 +13,16 @@ on:
       platform:
         description: "gomobile platform"
         default: android/arm64
+  # 让 release.yml 能复用同一条构建链（同一次 run 内 build -> sign，
+  # 免去跨 run 取产物的 token 语义坑，且 SLSA 证明能覆盖整条链）
+  workflow_call:
+    inputs:
+      singbox_ref:
+        type: string
+        default: feat/easytier-r1t
+      platform:
+        type: string
+        default: android/arm64
 
 permissions:
   contents: read
@@ -25,7 +35,7 @@ jobs:
   unsigned-apk:
     runs-on: ubuntu-latest
     env:
-      PLATFORM: ${{ inputs.platform }}
+      PLATFORM: ${{ inputs.platform || 'android/arm64' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
@@ -49,7 +59,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           repository: AcccBa/easytier-sing-box
-          ref: ${{ inputs.singbox_ref }}
+          ref: ${{ inputs.singbox_ref || 'feat/easytier-r1t' }}
           path: singbox
 
       - name: 构建 libbox.aar 并放进 app/libs
