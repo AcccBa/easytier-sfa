@@ -98,7 +98,10 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+            // CI 不传 LOCAL_PROPERTIES 时交**未签名** release 包，签名在本地用真 key 完成（密钥不进 CI）
+            if (getProps("KEYSTORE_PASS").isNotEmpty()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             vcsInfo.include = false
         }
     }

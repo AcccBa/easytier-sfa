@@ -1,0 +1,81 @@
+name: apk
+
+# 端到端出「未签名 release APK」：拉 sing-box fork -> 构 libbox.aar -> 放进 app/libs -> gradle。
+# 签名不进 CI：不传 LOCAL_PROPERTIES，app/build.gradle.kts 里已改成「无 KEYSTORE_PASS 就不配签名」。
+# 本地用 ~/lab/singbox-easytier-l2/sign-local.sh 以真 key 签名（同 key => 覆盖安装免卸载）。
+
+on:
+  workflow_dispatch:
+    inputs:
+      singbox_ref:
+        description: "sing-box fork 的分支 / ref"
+        default: feat/easytier-r1t
+      platform:
+        description: "gomobile platform"
+        default: android/arm64
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unsigned-apk:
+    runs-on: ubuntu-latest
+    env:
+      PLATFORM: ${{ inputs.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.2"
+          cache: true
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools build-tools;37.0.0 platforms;android-36 ndk;28.0.13004108"
+
+      - name: 只读拉取 sing-box fork（仓库级 deploy key，只授权这一个仓，可随时吊销）
+        uses: actions/checkout@v4
+        with:
+          repository: AcccBa/easytier-sing-box
+          ref: ${{ inputs.singbox_ref }}
+          ssh-key: ${{ secrets.SINGBOX_FORK_SSH_KEY }}
+          path: singbox
+
+      - name: 构建 libbox.aar 并放进 app/libs
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          if ! command -v gomobile >/dev/null; then
+            go install golang.org/x/mobile/cmd/gomobile@v0.1.13
+          fi
+          gomobile init -ndk-version 28
+          ( cd singbox && go run ./cmd/internal/build_libbox -target android -platform "$PLATFORM" )
+          mkdir -p app/libs
+          cp singbox/libbox.aar singbox/libbox-legacy.aar app/libs/
+          ls -la app/libs/
+
+      - name: gradle 出未签名 release
+        run: ./gradlew --no-daemon --max-workers=3 :app:assembleOtherRelease
+
+      - name: 回读产物（防 gradle UP-TO-DATE 打旧包：必须看到本次时间与 sha256）
+        run: |
+          find app/build/outputs/apk/other/release -name '*.apk' -exec ls -la {} \;
+          find app/build/outputs/apk/other/release -name '*.apk' -exec sha256sum {} \; | tee apk-sha256.txt
+          test -s apk-sha256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SFA-unsigned
+          path: |
+            app/build/outputs/apk/other/release/*.apk
+            apk-sha256.txt
+          if-no-files-found: error
