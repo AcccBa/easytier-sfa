@@ -114,7 +114,8 @@ jobs:
             exit 1
           fi
           mkdir -p out
-          mv aligned-signed.apk "out/$(basename "${APK%.apk}")-signed.apk"
+          BASE=$(basename "${APK%.apk}"); BASE="${BASE%-unsigned}"   # 去掉输入自带的 -unsigned，免得产物叫 -unsigned-signed
+          mv aligned-signed.apk "out/${BASE}-signed.apk"
           ( cd out && sha256sum *-signed.apk > SHA256SUMS && cat SHA256SUMS )
 
       - name: 已签名产物留档（即使后续步骤失败也不丢）
