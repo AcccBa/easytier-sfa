@@ -65,7 +65,13 @@ jobs:
           ls -la app/libs/
 
       - name: gradle 出未签名 release
-        run: ./gradlew --no-daemon --max-workers=3 :app:assembleOtherRelease
+        # 内存上限必须显式给：runner 只有 7GB，不设限会被 OOM 杀掉（实测 exit 143，死在 lintVital）
+        run: |
+          ./gradlew --no-daemon --max-workers=2 \
+            -Dorg.gradle.jvmargs="-Xmx2500m -XX:MaxMetaspaceSize=768m" \
+            -Dkotlin.daemon.jvm.options="-Xmx1024m" \
+            :app:assembleOtherRelease \
+            -x lintVitalAnalyzeOtherRelease -x lintVitalReportOtherRelease -x lintVitalOtherRelease
 
       - name: 回读产物（防 gradle UP-TO-DATE 打旧包：必须看到本次时间与 sha256）
         run: |
