@@ -93,7 +93,7 @@ jobs:
           ALIAS_PASS: ${{ secrets.ALIAS_PASS }}
         run: |
           set -euo pipefail
-          APK=$(find in -name 'SFA-*arm64-v8a.apk' | head -1)
+          APK=$(find in -name 'SFA-*arm64-v8a*unsigned.apk' | head -1)
           [ -n "$APK" ] || { echo "FATAL: 未找到 arm64 未签名 APK"; find in -type f; exit 1; }
           KS=$(mktemp /tmp/rs-XXXX.keystore)
           trap 'rm -f "$KS"' EXIT
